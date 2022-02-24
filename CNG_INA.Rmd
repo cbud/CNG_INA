@@ -1,0 +1,235 @@
+---
+title: "Chilean needle grass impact network analysis"
+author: "Chris Buddenhagen"
+date: "24/02/2022"
+output: word_document
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#load packages
+library(rgeos)
+library(rgdal)
+library(RColorBrewer)
+library(ggplot2)
+library(maptools)
+library(readxl)
+library(tidyverse)
+library(tmap)
+library(sf)
+library(sp)
+```
+
+## Introduction
+
+Here we focus on the farm to farm spread of Chilean needle grass (CNG) in the Hawkes Bay. We provide data and suggest some methods for modeling its spread. Distribution data for CNG was sourced from Hawkes Bay Regional Council and should be presented confidentially, though the data set is large the methods to collect it appear to be ad-hoc. Estimates of the eco-climatic range of CNG in New Zealand were sourced for current and future climates from Shona Lamoureaux [@bourdôt2012].
+
+CNG was introduced in 1962 to a Waipawa farm in the Hawkes Bay region owned by a "Mr Hornblow" after cultivation and seeding using seed sent from the South Island [@connor1993]. I have yet to identify the specific location though. The rate of local spread being estimated at approximately 120-140 metres per year, since seed has no major features for long distance dispersal other than being able to penetrate animal hides and furs, and survive at low numbers \<3% after passage through Angus steer guts [@gardener2003]. Longer distance dispersal is believed to be primarily human mediated, via farm equipment, hay, and farm to farm movement of livestock. Once the plant colonizes riverbeds, it can spread downstream, and has infested most of the lower reaches of the Tukituki and Waipawa Rivers. Another farm in Puketapu was planted with contaminated seed in 1976 (both cases from seed provided from Marlborough farms). Now approximately 135 farms are infested.
+
+We use Impact Network Analysis to model spread [@garrett2021], an attractive feature is that it can account for the interacting influence of management measures and environmental suitability for establishment.
+
+## Methods
+
+Farm location data was sourced from Agribase [@sanson2000] for the Hawkes Bay Region, where CNG is targeted in the [Hawkes Bay Regional Council's Pest Plan](https://www.hbrc.govt.nz/environment/pest-control/biosecurity/regional-pest-management-plan/). Since farms in the database contain multiple land parcels, farms with the same farm ID were merged. Then only sheep and and beef farms selected. An ecoclimatic index for CNG of \>5 was also used to further reduce the number of farms to be used in an adjacency matrix
+
+```{r agribase farms with high ecoclimatic index, echo=FALSE, cach=TRUE, warning=FALSE}
+#already subsetted Agribase for farms in Hawkes Bay but could use same code to obtain only Hawkes Bay region from the larger Agribase database
+  Agribase<-sf::st_read("Inputs/HB_wgs84.shp")
+
+#sf::st_bbox(Agribase)
+unique(Agribase$region)
+HB.wgs84<-Agribase [Agribase$region=="HBAY",]
+#sf::st_bbox(HB.wgs84)
+HB.wgs84<-st_make_valid(HB.wgs84)
+HB.wgs84<-st_transform(HB.wgs84, CRS("+init=epsg:4326"))
+#check class and projection, plus bounding box
+class(HB.wgs84)
+#sf::st_crs(HB.wgs84)
+bb<-sf::st_bbox(HB.wgs84)
+paste(bb)
+#HB.wgs84<-sf::st_write(HB.wgs84, "Inputs/HB_wgs84.shp")
+
+
+  
+##determine higher risk farm types by being sheep and/or beef
+HB.wgs84v2<-HB.wgs84 %>% 
+  mutate(sheep_or_beef=ifelse(farm_type=="BEF"
+                              |farm_type=="SNB"
+                              |farm_type=="SHP"
+                              #|shp_nos>1000
+                              #|bef_nos>1000
+                              , 1,0)) %>% 
+  filter(sheep_or_beef==1)
+#check crs and bounding again
+ bb<- st_bbox(HB.wgs84v2)
+  
+#group multiple polygons per farm into single multipart polygon per farm 
+HB.wgs84v2<-HB.wgs84v2 %>% 
+  group_by(farm_id) %>% 
+  summarize(size_ha= sum(size_ha), bef_nos=sum(bef_nos), shp_nos=sum(shp_nos), postal_twn=first(postal_twn), locality=first(locality), postal_cod=first(postal_cod), farm_type=first(farm_type))
+
+#sf::st_bbox(HB.wgs84v2)
+
+
+#centroids for each farm such that the centroid is forced to be in the farm even if the shape is irregular.
+
+HB.wgs84_centroids<-sf::st_point_on_surface(HB.wgs84v2)
+
+HB.wgs84_centroids2<- as.data.frame(sf::st_coordinates(HB.wgs84_centroids$geometry))
+HB.wgs84v2<-bind_cols(HB.wgs84v2, HB.wgs84_centroids2) 
+bb<- st_bbox(HB.wgs84v2)
+
+#get the ecoenvironmental index per farm per CLIMEX model
+
+climex<-sf::st_read("Inputs/NZ_fine_scale_fishnet_join.shp")
+
+climex<-sf::st_transform(climex, CRS("+init=epsg:4326"))
+st_crs(climex)
+
+climex_crop<-sf::st_crop(climex,bb)
+#st_bbox(climex)
+
+
+#identify mean EI values for farms map, anything over a 5 is suitable
+
+HB_intersects_EI_6<-aggregate(climex_crop["Avg_EI"], HB.wgs84v2, mean, simplify=T, join = st_intersects, do_union=F)
+HB_intersects_EI_6$Avg_EI<-ifelse(HB_intersects_EI_6$Avg_EI<6, NA,HB_intersects_EI_6$Avg_EI) 
+#add back to main shape file
+HB.wgs84v2$Avg_EI<-as.numeric(HB_intersects_EI_6$Avg_EI)
+#st_bbox(HB.wgs84v2)
+
+
+
+```
+
+```{r insert map AVG_EI, fig.cap="Ecoclimatic index values (>5) for sheep and beef farms in Hawkes Bay."}
+
+#check farm ecoclimatic suitability
+tmap::tm_shape(HB.wgs84v2)+tm_fill("Avg_EI", pallette="RdYlGn")+
+   tmap_options(check.and.fix = TRUE)
+
+```
+
+The next thing is to get information about CNG point locations on farms, or near farms.
+
+```{r get CNG data per farm, echo=FALSE, cache=TRUE}
+#load CNG data
+crscheck<-sf::st_crs(HB.wgs84v2)
+CNGpoints<-read_xlsx("Inputs/HBRC_CNG_points.xlsx")%>% 
+  filter(Longitude>176)
+
+CNGpoints2<-st_as_sf(CNGpoints, coords = c("Longitude", "Latitude"), crs = crscheck)
+
+
+  
+#identify farms with CNG points in them
+
+HB_risk2<-sf::st_intersects(HB.wgs84v2,CNGpoints2, prepared = FALSE)
+HB_risk2_values<-summary(HB_risk2)
+check<-HB_risk2_values[,1]
+HB.wgs84v2$CNGpresent<-as.numeric(check)
+class(HB.wgs84v2)
+
+#HB.wgs84v2$CNGpresent  #uncomment to check 
+
+#some points aren't on farms, count records if points are within 20 m, for example along roads
+HB_risk2<-sf::st_is_within_distance(HB.wgs84v2, CNGpoints2, 20)
+HB_risk2_values<-summary(HB_risk2)
+check<-HB_risk2_values[,1]
+HB.wgs84v2$CNGclose<-as.numeric(check)
+#class(HB.wgs84v2)
+#HB.wgs84v2$CNGclose #uncomment to check
+
+#remove low EI records
+
+HB.wgs84v2<-HB.wgs84v2 %>% filter(Avg_EI!="NA")
+hist(HB.wgs84v2$Avg_EI, main="Number of farms by ecoclimatic score")
+#write out the CSV for location without geometry
+#Also fit a slope between 0 and 40 to set establishment probability
+Farm_infestation_status_INA<-st_set_geometry((HB.wgs84v2 %>% 
+   mutate(Probability_Estab=Avg_EI*2.5/100)), NULL)
+
+write_csv(Farm_infestation_status_INA, "Inputs/Simple_points_for_INA.csv")
+
+```
+
+```{r CNG points with Avg EI, echo=FALSE, fig.cap= "Chilean needle grass records (red points) overlayed on farms with the corresponding ecoclimatic index."}
+
+ggplot()+
+  geom_sf(data=HB.wgs84v2, aes(fill=Avg_EI))+ scale_fill_viridis_b(breaks=c(5,10,20,30,40))+
+geom_point(data=CNGpoints, aes(x=Longitude, y=Latitude), shape=18, size=1, colour="red")
+  
+```
+
+The next step is to make a distance matrix, using polygons. Centroids would be simpler but using them to estimate farm to farm distances does not address farms that share a boundary. The goal is to use a dispersal kernel that takes into account farm distances a the boundary.
+
+```{r get distance matrix, echo=TRUE, cache=TRUE}
+
+#gDistance seems to require this other format
+For_distance <-as_Spatial(HB.wgs84v2)
+For_distance <-spTransform(For_distance, CRS("+proj=utm +zone=60 +south +datum=WGS84 +units=m +no_defs"))
+
+#summary(For_distance)
+
+# #distance matrix all farms
+Farm_Dist_Mat_HB<-gDistance(For_distance, byid = TRUE)
+#row.names(Farm_Dist_Mat_HB)
+
+farm_ids<-HB.wgs84v2$farm_id
+
+rownames(Farm_Dist_Mat_HB) <- farm_ids
+colnames(Farm_Dist_Mat_HB) <- farm_ids
+dist_mat_farm<-as.matrix(Farm_Dist_Mat_HB)
+saveRDS(dist_mat_farm, "Inputs/dist_mat_farm.rds")
+#write.csv(Farm_Dist_Mat_HB, "Inputs/dist_mat_farm.csv")
+
+
+```
+
+\#\#\# Dispersal kernel
+
+This graphs a negative exponential dispersal kernel but such that dispersal near 0 is not 100%. Instead we set it at 1/20 based on the idea that seed dispersal between adjacent farms is not zero (but once every 20 years). The plant produces seed once per year and is mainly dispersed within farm by farmer equipment, grazing animals moving on wool or hooves (gut passage is not proven). Between farms dispersal is mainly from livestock movement, hay or possibly silage and historically from contaminated seed (rare now). Then we set up the adjacency matrix based on the probability of dispersal based on distance between nodes/farms.
+
+```{r dispersal kernal, echo=TRUE, fig.width=10, fig.height=10, fig.cap="Dispersal kernel negative exponential"}
+
+d<-seq(from=0.5, to=2000, by=0.5)
+lmda=0.01
+thresh=1/20
+NegExp <- thresh*exp(-lmda * d)
+dispersal<-tibble(distance=d, Probability=NegExp)
+#probability of dispersal at 1500m
+dispersal[3000,]
+#probability of dispersal at 159m
+dispersal[300,]
+ggplot(data=dispersal, aes(x=d, y=NegExp))+
+  geom_line()+
+  scale_y_continuous(trans = "sqrt", 
+                    # breaks=c(0.000000001,0.00001, 0.001, 0.01, 0.05)
+                     )+
+  xlab("distance in meters")+
+  ylab("Probability of dispersal")
+
+
+
+```
+
+Then we set up the adjacency matrix based on the probability of dispersal based on distance between nodes/farms.
+
+```{r create an adjacency matrix, echo=TRUE}
+
+
+#set all zero distances to a small distance because zeros are a problem for negative exponential formula
+
+dist_mat_farm[dist_mat_farm==0]<-0.01
+ 
+    farm2farm_probs <- thresh * exp(-lmda * dist_mat_farm)
+#set diagonal to 1   
+diag(farm2farm_probs)<-1
+
+saveRDS(dist_mat_farm, "Inputs/farm2farm_probs.rds")
+```
+
+The next step is to set up a INA scenario analysis. With the probability of establishment being penalized by 20% at an Avg_EI of 6 and not at all for an average EI of 40. The management adoption rate could vary between 20 and 80% in increments of 10. Management effectiveness could have a mean of 1/14 and sd of 0.1 - since the seed bank lasts 7 years, and getting rid of it is difficult.
+
+## References

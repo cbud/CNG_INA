@@ -1,0 +1,17 @@
+sp
+rgeos
+rgdal
+RColorBrewer
+ggplot2
+maptools
+readxl
+tidyverse
+tibble
+tidyr
+readr
+purrr
+dplyr
+stringr
+forcats
+tmap
+sf
