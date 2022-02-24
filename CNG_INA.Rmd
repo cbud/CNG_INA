@@ -187,7 +187,7 @@ saveRDS(dist_mat_farm, "Inputs/dist_mat_farm.rds")
 
 ```
 
-\#\#\# Dispersal kernel
+### Dispersal kernel
 
 This graphs a negative exponential dispersal kernel but such that dispersal near 0 is not 100%. Instead we set it at 1/20 based on the idea that seed dispersal between adjacent farms is not zero (but once every 20 years). The plant produces seed once per year and is mainly dispersed within farm by farmer equipment, grazing animals moving on wool or hooves (gut passage is not proven). Between farms dispersal is mainly from livestock movement, hay or possibly silage and historically from contaminated seed (rare now). Then we set up the adjacency matrix based on the probability of dispersal based on distance between nodes/farms.
 
@@ -227,7 +227,7 @@ dist_mat_farm[dist_mat_farm==0]<-0.01
 #set diagonal to 1   
 diag(farm2farm_probs)<-1
 
-saveRDS(dist_mat_farm, "Inputs/farm2farm_probs.rds")
+saveRDS(farm2farm_probs, "Inputs/farm2farm_probs.rds")
 ```
 
 The next step is to set up a INA scenario analysis. With the probability of establishment being penalized by 20% at an Avg_EI of 6 and not at all for an average EI of 40. The management adoption rate could vary between 20 and 80% in increments of 10. Management effectiveness could have a mean of 1/14 and sd of 0.1 - since the seed bank lasts 7 years, and getting rid of it is difficult.

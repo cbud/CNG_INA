@@ -1,0 +1,85 @@
+---
+title: "INA_only"
+author: "Chris Buddenhagen"
+date: "25/02/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(INA)
+library(tidyverse)
+library(dplyr)
+```
+
+## Attempt notes
+
+I set up a small adjacency matrix for the quick running of INAscene.
+
+```{r load data, echo=TRUE}
+
+data<-read_csv("Inputs/Simple_points_for_INA.csv")
+adj<-readRDS("Inputs/farm2farm_probs.rds")
+class(data)
+class(adj)
+#make a small data set to test
+waipawa<- data %>% 
+  filter(postal_twn=="Waipawa") 
+colnames(adj)
+smadj<-adj [waipawa$farm_id,waipawa$farm_id]
+
+prob_est<-waipawa %>% 
+  select(Probability_Estab) #this is vector of probabilities for establishment 
+prob_est<-as.vector(prob_est$Probability_Estab)
+class(prob_est)
+
+geocoords<-waipawa %>% select(X,Y) #I thought I didn't need it because I was using an adj matrix of dispersal probabilities but it asked me for it
+geocoords<-as.matrix(geocoords)
+
+geocoords<-as.matrix(geocoords)
+x<-geocoords$X[1:140]
+y<-geocoords$Y[1:140]
+
+geocoords<-matrix(c(x,y), byrow = F, ncol = 2)
+initbio<- rep(0, length(waipawa$farm_id))
+initbio[2]<-1
+class(initbio)
+```
+
+Theis shows the outputs for the different things I entered. The minimum number of variables is longer than you'd expect.
+
+> INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1, readbpam = T, bpam= smadj)
+Error in if (maneffdir != "decrease_estab" & maneffdir != "increase_estab") { : missing value where TRUE/FALSE needed
+
+
+> INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1, readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2)
+Error in INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1,  :   argument "readgeocoords" is missing, with no default
+
+> INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1, readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = T, geocoords = geocoords)
+Error in INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1,  : 
+  argument "readinitinfo" is missing, with no default
+  
+  > INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1, readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = T, geocoords = geocoords, readinitinfo = F, initinfo.norp = 'prop', initinfo.p = c(0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8) )
+Error in INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1,  : 
+  argument "readinitbio" is missing, with no default
+  
+  > INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T,  readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = F, geocoords = geocoords, readinitinfo = F, initinfo.norp = 'prop', initinfo.p = c(0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8), readinitbio = TRUE,initbio=initbio, readseam = FALSE, seamdist = "random", seamrandp = c(0, 0.01, 0.05, 0.1, 0.2), readprobadoptvec=F, readprobestabvec = T, probestabvec = prob_est, usethreshman = F , randgeo = F)
+Error in cbind(xvec, yvec) : object 'xvec' not found
+
+> INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T,  readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = T, geocoords = geocoords, readinitinfo = F, initinfo.norp = 'prop', initinfo.p = c(0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8), readinitbio = TRUE,initbio=initbio, readseam = FALSE, seamdist = "random", seamrandp = c(0, 0.01, 0.05, 0.1, 0.2), readprobadoptvec=F, readprobestabvec = T, probestabvec = prob_est, usethreshman = F )
+Quitting from lines 66-69 (INA_only.Rmd) 
+Error in if (dist4 == "random") { : missing value where TRUE/FALSE needed
+Calls: <Anonymous> ... eval -> <Anonymous> -> multsame2 -> setup2 -> initvals
+
+
+> INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T,  readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = T, geocoords = geocoords, readinitinfo = T, initinfo.norp = 'prop', initinfo.p = c(0.01,0.05,0.1,0.2,0.4, 0.6, 0.8), readinitbio = TRUE,initbio=initbio, readseam = FALSE, seamdist = "random", seamrandp = c(0, 0.01, 0.05, 0.1, 0.2), readprobadoptvec=F, readprobestabvec = T, probestabvec = prob_est, usethreshman = F )
+Error in vect1 %*% amat : non-conformable arguments
+Calls: <Anonymous> ... eval -> <Anonymous> -> multsame2 -> ntsteps2 -> spreadstep
+  
+```{r INA scenario}
+INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T,  readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = T, geocoords = geocoords, readinitinfo = T, initinfo.norp = 'prop', initinfo.p = c(0.01,0.05,0.1,0.2,0.4, 0.6, 0.8), readinitbio = TRUE,initbio=initbio, readseam = FALSE, seamdist = "random", seamrandp = c(0, 0.01, 0.05, 0.1, 0.2), readprobadoptvec=F, readprobestabvec = T, probestabvec = prob_est, usethreshman = F , randgeo = T)
+
+
+```
+
