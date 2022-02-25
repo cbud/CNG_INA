@@ -18,7 +18,6 @@ library(dplyr)
 I set up a small adjacency matrix for the quick running of INAscene.
 
 ```{r load data, echo=TRUE}
-
 data<-read_csv("Inputs/Simple_points_for_INA.csv")
 adj<-readRDS("Inputs/farm2farm_probs.rds")
 class(data)
@@ -27,17 +26,21 @@ class(adj)
 waipawa<- data %>% 
   filter(postal_twn=="Waipawa") 
 colnames(adj)
-smadj<-adj [waipawa$farm_id,waipawa$farm_id]
 
+#maybe the adjacency matrix cannot have named columns and rows?
+smadj<-adj [waipawa$farm_id,waipawa$farm_id]
+b<-length(dimnames(smadj)[[1]])
+b<-seq(1:b)
+row.names(smadj)<-b
+colnames(smadj)<-b
+dimnames(smadj)<-NULL
 prob_est<-waipawa %>% 
   select(Probability_Estab) #this is vector of probabilities for establishment 
 prob_est<-as.vector(prob_est$Probability_Estab)
 class(prob_est)
 
 geocoords<-waipawa %>% select(X,Y) #I thought I didn't need it because I was using an adj matrix of dispersal probabilities but it asked me for it
-geocoords<-as.matrix(geocoords)
 
-geocoords<-as.matrix(geocoords)
 x<-geocoords$X[1:140]
 y<-geocoords$Y[1:140]
 
@@ -47,7 +50,7 @@ initbio[2]<-1
 class(initbio)
 ```
 
-Theis shows the outputs for the different things I entered. The minimum number of variables is longer than you'd expect.
+This shows the outputs for the different things I entered. The minimum number of variables is longer than you'd expect.
 
 > INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1, readbpam = T, bpam= smadj)
 Error in if (maneffdir != "decrease_estab" & maneffdir != "increase_estab") { : missing value where TRUE/FALSE needed
