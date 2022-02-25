@@ -27,8 +27,10 @@ waipawa<- data %>%
   filter(postal_twn=="Waipawa") 
 colnames(adj)
 
-#maybe the adjacency matrix cannot have named columns and rows?
+#I wanted to us a matrix with named rows and columns for easy reference to farms
 smadj<-adj [waipawa$farm_id,waipawa$farm_id]
+
+#But then I wondered if the row and column names were not expected in the adjacency matrix that INA package expects - so I removed the names
 b<-length(dimnames(smadj)[[1]])
 b<-seq(1:b)
 row.names(smadj)<-b
@@ -36,7 +38,11 @@ colnames(smadj)<-b
 dimnames(smadj)<-NULL
 prob_est<-waipawa %>% 
   select(Probability_Estab) #this is vector of probabilities for establishment 
+
+
 prob_est<-as.vector(prob_est$Probability_Estab)
+
+prob_est<-1-(1-prob_est)*20/100
 class(prob_est)
 
 geocoords<-waipawa %>% select(X,Y) #I thought I didn't need it because I was using an adj matrix of dispersal probabilities but it asked me for it
@@ -46,7 +52,7 @@ y<-geocoords$Y[1:140]
 
 geocoords<-matrix(c(x,y), byrow = F, ncol = 2)
 initbio<- rep(0, length(waipawa$farm_id))
-initbio[2]<-1
+initbio[2]<-1 #infested farm in Waipawa
 class(initbio)
 ```
 
@@ -79,10 +85,99 @@ Calls: <Anonymous> ... eval -> <Anonymous> -> multsame2 -> setup2 -> initvals
 > INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T,  readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = T, geocoords = geocoords, readinitinfo = T, initinfo.norp = 'prop', initinfo.p = c(0.01,0.05,0.1,0.2,0.4, 0.6, 0.8), readinitbio = TRUE,initbio=initbio, readseam = FALSE, seamdist = "random", seamrandp = c(0, 0.01, 0.05, 0.1, 0.2), readprobadoptvec=F, readprobestabvec = T, probestabvec = prob_est, usethreshman = F )
 Error in vect1 %*% amat : non-conformable arguments
 Calls: <Anonymous> ... eval -> <Anonymous> -> multsame2 -> ntsteps2 -> spreadstep
-  
-```{r INA scenario}
-INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T,  readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = T, geocoords = geocoords, readinitinfo = T, initinfo.norp = 'prop', initinfo.p = c(0.01,0.05,0.1,0.2,0.4, 0.6, 0.8), readinitbio = TRUE,initbio=initbio, readseam = FALSE, seamdist = "random", seamrandp = c(0, 0.01, 0.05, 0.1, 0.2), readprobadoptvec=F, readprobestabvec = T, probestabvec = prob_est, usethreshman = F , randgeo = T)
+
+A possible issue is that I haven't set up a social network except "random". I think I would be happy to run a model without a social network. Is that possible?
+
+```{r example}
+CNGv1 <-
+  INAscene(
+    nreals = 10,
+    ntimesteps = 20,
+    doplot = F,
+    readgeocoords = T,
+    geocoords = geocoords,
+    numnodes = NA,
+    xrange = NA,
+    yrange = NA,
+    randgeo = F,
+    readinitinfo = T,
+    initinfo = initbio,
+    initinfo.norp = NA,
+    initinfo.n = NA,
+    initinfo.p = NA,
+    initinfo.dist = NA,
+    readinitbio = T,
+    initbio = initbio,
+    initbio.norp = NA,
+    initbio.n = NA,
+    initbio.p = NA,
+    initbio.dist = NA,
+    readseam = F,
+    seam = NA,
+    seamdist = 'random',
+    seamrandp = c(0.01, 0.05, 0.1),
+    seampla = NA,
+    seamplb = NA,
+    readbpam = T,
+    bpam = smadj,
+    bpamdist = F,
+    bpamrandp = NA,
+    bpampla = NA,
+    bpamplb = NA,
+    readprobadoptvec = F,
+    probadoptvec = NA,
+    probadoptmean = c(0.1,0.2,0.3,0.4,0.5),
+    probadoptsd = 0.1,
+    readprobestabvec = F,
+    probestabvec = NA,
+    probestabmean = prob_est,
+    probestabsd = 0.1,
+    maneffdir = 'decrease_estab',
+    maneffmean = c(1/30,1/21,1/14, 1/7, 1/5, 1/2),
+    maneffsd = 0.2,
+    usethreshman = F,
+    maneffthresh = NA,
+    sampeffort = NA
+  ) 
 
 
 ```
+
+Plots
+
+```{r plots}
+jt <- CNGv1$multout
+
+plot(jt$probadoptmean, jt$mestab, xlab='Mean probability of adopting technology if informed', ylab='Proportion nodes with bioentity', xlim=c(0,1), ylim=c(0,1))
+plot(jt$probadoptmean, jt$mdec, xlab='Mean probability of adopting technology if informed', ylab='Proportion nodes with technology adoption', xlim=c(0,1), ylim=c(0,1))
+jt2 <- CNGv1$multdetails
+hist(
+jt2[[1]]$setodec,
+main = 'Proportion nodes with decision to adopt technology',
+xlim = c(0, 1),
+xlab = '',
+col = 'darkblue',
+freq = F
+)
+
+jt2 <- CNGv1$multout
+# Plot how the mean establishment proportion is a function of the mean
+# management effect
+
+plot(
+jt2$maneffmean,
+jt2$mestab,
+xlab = 'Mean management effect size',
+ylab = 'Proportion nodes with invasive established',
+ylim = c(0, 1),
+col = 'red',
+pch = 16
+)
+lines(jt2$maneffmean, jt2$mestab, col = 'red')
+# also indicate the 95th percentile
+lines(jt2$maneffmean, jt2$estab95, col='red', lty=2)
+# also indicate the 5th percentile
+lines(jt2$maneffmean, jt2$estab5, col='red', lty=2)
+```
+
 
