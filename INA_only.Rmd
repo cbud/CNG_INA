@@ -31,11 +31,11 @@ colnames(adj)
 smadj<-adj [waipawa$farm_id,waipawa$farm_id]
 
 #But then I wondered if the row and column names were not expected in the adjacency matrix that INA package expects - so I removed the names
-b<-length(dimnames(smadj)[[1]])
-b<-seq(1:b)
-row.names(smadj)<-b
-colnames(smadj)<-b
-dimnames(smadj)<-NULL
+# b<-length(dimnames(smadj)[[1]])
+# b<-seq(1:b)
+# row.names(smadj)<-b
+# colnames(smadj)<-b
+# dimnames(smadj)<-NULL
 prob_est<-waipawa %>% 
   select(Probability_Estab) #this is vector of probabilities for establishment 
 
@@ -54,6 +54,17 @@ geocoords<-matrix(c(x,y), byrow = F, ncol = 2)
 initbio<- rep(0, length(waipawa$farm_id))
 initbio[2]<-1 #infested farm in Waipawa
 class(initbio)
+
+
+#big matrix version
+
+# geocoords2<-matrix(c(data$X, data$Y), byrow=F, ncol=2)
+# prob_est2<-as.vector(data$Probability_Estab)
+# prob_est2<-1-(1-prob_est2)*20/100
+# class(prob_est2)
+# initbio2<- rep(0, length(data$farm_id))
+# initbio2[2]<-1 #infested farm in Waipawa
+# class(initbio2)
 ```
 
 This shows the outputs for the different things I entered. The minimum number of variables is longer than you'd expect.
@@ -86,13 +97,18 @@ Calls: <Anonymous> ... eval -> <Anonymous> -> multsame2 -> setup2 -> initvals
 Error in vect1 %*% amat : non-conformable arguments
 Calls: <Anonymous> ... eval -> <Anonymous> -> multsame2 -> ntsteps2 -> spreadstep
 
+With 5 iterations and 5 timesteps and 1800 nodes
+
+[1] "ending parameter combination 37"
+Error: cannot allocate vector of size 25.6 Mb
+
 A possible issue is that I haven't set up a social network except "random". I think I would be happy to run a model without a social network. Is that possible?
 
 ```{r example}
 CNGv1 <-
   INAscene(
-    nreals = 10,
-    ntimesteps = 20,
+    nreals = 30,
+    ntimesteps = 60,
     doplot = F,
     readgeocoords = T,
     geocoords = geocoords,
@@ -126,21 +142,21 @@ CNGv1 <-
     bpamplb = NA,
     readprobadoptvec = F,
     probadoptvec = NA,
-    probadoptmean = c(0.2, 0.3),
+    probadoptmean = seq(from = 0, to = 1, by = 0.1),
     probadoptsd = 0.3,
-    readprobestabvec = F,
-    probestabvec = NA,
-    probestabmean = prob_est,
-    probestabsd = 0.1,
+    readprobestabvec = T,
+    probestabvec = prob_est,
+    probestabmean = NA,
+    probestabsd = NA,
     maneffdir = 'decrease_estab',
-    maneffmean = c(1/30,1/21,1/14, 1/7, 1/5),
+    maneffmean = seq(from = 0, to = 1, by = 0.03),
     maneffsd = 0.2,
     usethreshman = F,
     maneffthresh = NA,
-    sampeffort = NA
+    sampeffort = 2
   ) 
 
-
+ 
 ```
 
 Plots
@@ -178,6 +194,34 @@ lines(jt2$maneffmean, jt2$mestab, col = 'red')
 lines(jt2$maneffmean, jt2$estab95, col='red', lty=2)
 # also indicate the 5th percentile
 lines(jt2$maneffmean, jt2$estab5, col='red', lty=2)
+
+plot(
+jt2$probadoptmean,
+jt2$mestab,
+xlab = 'Mean probability of adoption',
+ylab = 'Proportion nodes with invasive established',
+ylim = c(0, 1),
+col = 'red',
+pch = 16
+)
+lines(jt2$probadoptmean, jt2$mestab, col='red')
+# also indicate the 95th and 5th percentile
+lines(jt2$probadoptmean, jt2$estab95, col='red', lty=2)
+lines(jt2$probadoptmean, jt2$estab5, col='red', lty=2)
+
+
+library(plot3D)
+plot3D::scatter3D(
+x = jt2$probadoptmean,
+y = jt2$maneffmean,
+z = jt2$mestab,
+pch = 16,
+xlab = 'Mean prob adoption',
+ylab = 'Mean man effect',
+zlab = 'Prop bio estab',
+bty = 'b2',
+type = 'h'
+)
 ```
 
 

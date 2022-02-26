@@ -195,7 +195,7 @@ This graphs a negative exponential dispersal kernel but such that dispersal near
 
 d<-seq(from=0.5, to=2000, by=0.5)
 lmda=0.01
-thresh=1/20
+thresh=1/10
 NegExp <- thresh*exp(-lmda * d)
 dispersal<-tibble(distance=d, Probability=NegExp)
 #probability of dispersal at 1500m
