@@ -20,6 +20,7 @@ I set up a small adjacency matrix for the quick running of INAscene.
 ```{r load data, echo=TRUE}
 data<-read_csv("Inputs/Simple_points_for_INA.csv")
 adj<-readRDS("Inputs/farm2farm_probs.rds")
+#dimnames(adj)<-NULL
 class(data)
 class(adj)
 #make a small data set to test
@@ -31,11 +32,11 @@ colnames(adj)
 smadj<-adj [waipawa$farm_id,waipawa$farm_id]
 
 #But then I wondered if the row and column names were not expected in the adjacency matrix that INA package expects - so I removed the names
-# b<-length(dimnames(smadj)[[1]])
-# b<-seq(1:b)
-# row.names(smadj)<-b
-# colnames(smadj)<-b
-# dimnames(smadj)<-NULL
+ b<-length(dimnames(smadj)[[1]])
+b<-seq(1:b)
+row.names(smadj)<-b
+colnames(smadj)<-b
+dimnames(smadj)<-NULL
 prob_est<-waipawa %>% 
   select(Probability_Estab) #this is vector of probabilities for establishment 
 
@@ -107,8 +108,8 @@ A possible issue is that I haven't set up a social network except "random". I th
 ```{r example}
 CNGv1 <-
   INAscene(
-    nreals = 30,
-    ntimesteps = 60,
+    nreals = 15,
+    ntimesteps = 65,
     doplot = F,
     readgeocoords = T,
     geocoords = geocoords,
@@ -131,7 +132,7 @@ CNGv1 <-
     readseam = F,
     seam = NA,
     seamdist = 'random',
-    seamrandp = c(0.01, 0.05, 0.1),
+    seamrandp = c(0.001,0.01, 0.05, 0.1),
     seampla = NA,
     seamplb = NA,
     readbpam = T,
@@ -149,13 +150,14 @@ CNGv1 <-
     probestabmean = NA,
     probestabsd = NA,
     maneffdir = 'decrease_estab',
-    maneffmean = seq(from = 0, to = 1, by = 0.03),
+    maneffmean = seq(from = 0, to = 1, by = 0.1),
     maneffsd = 0.2,
     usethreshman = F,
     maneffthresh = NA,
     sampeffort = 2
   ) 
 
+saveRDS(CNGv1, "~/Sleeper Weeds/Waipawa_model.rds")
  
 ```
 
