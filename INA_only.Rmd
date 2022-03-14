@@ -2,18 +2,22 @@
 title: "INA_only"
 author: "Chris Buddenhagen"
 date: "25/02/2022"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-#library(devtools)
 
+# library(devtools)
 #devtools::install_github("GarrettLab/INA")
 
 library(INA)
 library(tidyverse)
 library(dplyr)
+library(igraph)
+library(ggraph)
 ```
 
 ## Attempt notes
@@ -24,6 +28,11 @@ I set up a small adjacency matrix for the quick running of INAscene.
 #knitr::purl("INA_only.Rmd")
 data<-read_csv("Inputs/Simple_points_for_INA.csv")
 adj<-readRDS("Inputs/farm2farm_probs.rds")
+
+#make a cut-off on low probabilities
+
+length(adj[adj[]>0])
+adj[adj < 1/10000]<-0
 #dimnames(adj)<-NULL
 class(data)
 class(adj)
@@ -35,14 +44,14 @@ colnames(adj)
 #I wanted to us a matrix with named rows and columns for easy reference to farms
 smadj<-adj [waipawa$farm_id,waipawa$farm_id]
 
-#But then I wondered if the row and column names were not expected in the adjacency matrix that INA package expects - so I removed the names
- b<-length(dimnames(smadj)[[1]])
-b<-seq(1:b)
-row.names(smadj)<-b
-colnames(smadj)<-b
-dimnames(smadj)<-NULL
+# #But then I wondered if the row and column names were not expected in the adjacency matrix that INA package expects - so I removed the names
+#  b<-length(dimnames(smadj)[[1]])
+# b<-seq(1:b)
+# row.names(smadj)<-b
+# colnames(smadj)<-b
+# #dimnames(smadj)<-NULL
 prob_est<-waipawa %>% 
-  select(Probability_Estab) #this is vector of probabilities for establishment 
+ select(Probability_Estab) #this is vector of probabilities for establishment 
 
 
 prob_est<-as.vector(prob_est$Probability_Estab)
@@ -111,51 +120,115 @@ A possible issue is that I haven't set up a social network except "random". I th
 
 ```{r example}
 
+# CNGv1 <-
+#   INAscene(
+#     nreals = 50,
+#     ntimesteps = 2022-1962,
+#     doplot = F,
+#     outputvol = "more",
+#     readgeocoords = T,
+#     geocoords = geocoords,
+#     numnodes = NA,
+#     xrange = NA,
+#     yrange = NA,
+#     randgeo = F,
+#     readinitinfo = F,
+#     initinfo = NA, #initbio2,#
+#     initinfo.norp = 'prop',
+#     initinfo.n = NA,
+#     initinfo.p = 1,
+#     initinfo.dist = 'random',
+#     readinitbio = F,
+#     initbio = NA, #initbio2,
+#     initbio.norp = "num",
+#     initbio.n = c(1,2,5), #starts in this number of nodes
+#     initbio.p = NA,
+#     initbio.dist = "random",
+#     readseam = F,
+#     seam = NA,
+#     seamdist = 'random',
+#     seamrandp = 1,
+#     seampla = NA,
+#     seamplb = NA,
+#     readbpam = T,
+#     bpam = smadj,
+#     bpamdist = F,
+#     bpamrandp = NA,
+#     bpampla = NA,
+#     bpamplb = NA,
+#     readprobadoptvec = F,
+#     probadoptvec = NA,
+#     probadoptmean = seq(from = 0, to = 1, by = 0.2),
+#     probadoptsd = 0.2,
+#     readprobestabvec = F, #read in for climate suitability affect if you have data
+#     probestabvec = NA, #prob_est,
+#     probestabmean = 1,
+#     probestabsd = 0.05,
+#     maneffdir = 'decrease_estab',
+#     maneffmean = seq(from = 0, to = 1, by = 0.1),
+#     maneffsd = 0.2,
+#     usethreshman = F,
+#     maneffthresh = NA,
+#     sampeffort = NA
+#   ) 
 
-CNGv1 <-
+# 
+# 
+ # saveRDS(CNGv1, "~/Downloads/Waipawa_model.rds")
+#  
+
+
+```
+
+Big matrix case
+
+```{r big matrix INA scene, error=TRUE}
+
+#options with large matrix
+CNGvLarge <-
   INAscene(
-    nreals = 15,
+    nreals = 30,
     ntimesteps = 2022-1962,
     doplot = F,
-    outputvol = 'less',
+    outputvol = "less",
     readgeocoords = T,
-    geocoords = geocoords,
+    geocoords = geocoords2,
     numnodes = NA,
     xrange = NA,
     yrange = NA,
     randgeo = F,
-    readinitinfo = T,
-    initinfo = initbio,
-    initinfo.norp = 'num',
+    readinitinfo = F,
+    initinfo = NA, #initbio2,#
+    initinfo.norp = 'prop',
     initinfo.n = NA,
-    initinfo.p = NA,
+    initinfo.p = 0.5,
     initinfo.dist = 'random',
-    readinitbio = T,
-    initbio = initbio,
-    initbio.norp = NA,
-    initbio.n = NA,
+    readinitbio = F,
+    initbio = NA, #initbio2,
+    initbio.norp = "num",
+    initbio.n = 2, #starts in 1 or 2 nodes
     initbio.p = NA,
-    initbio.dist = 'random',
+    initbio.dist = "random",
     readseam = F,
     seam = NA,
     seamdist = 'random',
-    seamrandp = c(0.01, 0.05, 0.5, 1),
+    seamrandp = 1,
     seampla = NA,
     seamplb = NA,
     readbpam = T,
-    bpam = smadj,
+    bpam = adj,
     bpamdist = F,
     bpamrandp = NA,
     bpampla = NA,
     bpamplb = NA,
     readprobadoptvec = F,
     probadoptvec = NA,
-    probadoptmean = seq(from = 0, to = 1, by = 0.1),
+   probadoptmean = seq(from = 0, to = 1, by = 0.1),
     probadoptsd = 0.2,
-    readprobestabvec = T,
-    probestabvec = prob_est,
-    probestabmean = NA,
-    probestabsd = NA,
+    readprobestabvec = F,
+    probestabvec = prob_est2,
+    probestabmean = 1,
+    probestabsd = 0.05,
     maneffdir = 'decrease_estab',
     maneffmean = seq(from = 0, to = 1, by = 0.1),
     maneffsd = 0.2,
@@ -163,9 +236,8 @@ CNGv1 <-
     maneffthresh = NA,
     sampeffort = NA
   ) 
+saveRDS(CNGvLarge, "~/Downloads/Large_model1in20pareto.rds") #1/10 and 0.08 produces 0.00907 at 300m
 
-saveRDS(CNGv1, "~/Sleeper Weeds/Waipawa_model.rds")
- 
 ```
 
 
@@ -230,24 +302,38 @@ saveRDS(CNGvLarge, "~/Sleeper Weeds/LargeRunCNG.rds")
 ```
 Plots
 
-```{r plots1}
 
-CNGv1<-readRDS("~/Sleeper Weeds/Waipawa_model.rds")
-jt <- CNGv1$multout
 
-plot(jt$probadoptmean, jt$mestab, xlab='Mean probability of adopting technology if informed', ylab='Proportion nodes with bioentity', xlim=c(0,1), ylim=c(0,1))
-plot(jt$probadoptmean, jt$mdec, xlab='Mean probability of adopting technology if informed', ylab='Proportion nodes with technology adoption', xlim=c(0,1), ylim=c(0,1))
-jt2 <- CNGv1$multdetails
-hist(
-jt2[[1]]$setodec,
-main = 'Proportion nodes with decision to adopt technology',
-xlim = c(0, 1),
-xlab = '',
-col = 'darkblue',
-freq = F
-)
+```{r plots, error=TRUE}
+#CNGv1<-readRDS("~/Downloads/Waipawa_model.rds")
+jt2 <- CNGvLarge$multout
 
-jt2 <- CNGv1$multout
+
+#Waipawa example
+# library(plot3D)
+# plot3D::scatter3D(
+# x = jt2$probadoptmean,
+# y = jt2$maneffmean,
+# z = jt2$mestab,
+# pch = 16,
+# xlab = 'Mean prob adoption',
+# ylab = 'Mean man effect',
+# zlab = 'Prop bio estab',
+# main = "Spread to matrix 140 farms",
+# bty = 'b2',
+# type = 'h'
+# )
+
+#jt2 <- CNGvLarge$multdetails
+# hist(
+# jt2[[1]]$setodec,
+# main = 'Proportion nodes with decision to adopt technology',
+# xlim = c(0, 1),
+# xlab = '',
+# col = 'darkblue',
+# freq = F
+# )
+
 # Plot how the mean establishment proportion is a function of the mean
 # management effect
 
@@ -266,23 +352,10 @@ lines(jt2$maneffmean, jt2$estab95, col='red', lty=2)
 # also indicate the 5th percentile
 lines(jt2$maneffmean, jt2$estab5, col='red', lty=2)
 
-plot(
-jt2$probadoptmean,
-jt2$mestab,
-xlab = 'Mean probability of adoption',
-ylab = 'Proportion nodes with invasive established',
-ylim = c(0, 1),
-col = 'red',
-pch = 16
-)
-lines(jt2$probadoptmean, jt2$mestab, col='red')
-# also indicate the 95th and 5th percentile
-lines(jt2$probadoptmean, jt2$estab95, col='red', lty=2)
-lines(jt2$probadoptmean, jt2$estab5, col='red', lty=2)
 
 
 library(plot3D)
-plot3D::scatter3D(
+p2<-plot3D::scatter3D(
 x = jt2$probadoptmean,
 y = jt2$maneffmean,
 z = jt2$mestab,
@@ -290,9 +363,12 @@ pch = 16,
 xlab = 'Mean prob adoption',
 ylab = 'Mean man effect',
 zlab = 'Prop bio estab',
+main = "Spread matrix 1830 farms",
 bty = 'b2',
 type = 'h'
 )
+
+
 ```
 
 Large matrix plots
@@ -362,3 +438,44 @@ bty = 'b2',
 type = 'h'
 )
 ```
+
+```{r surveillance analysis}
+
+surv_out<-smartsurv(adjmat = adj, stoch = F, nrealz=1)
+#surv_out_stoch<-smartsurv(adjmat = adj, stoch = T, nrealz=10)
+saveRDS(surv_out, "~/Downloads/surv_out.rds")
+```
+
+Graph a network
+
+```{r ggraph plots}
+adj<-readRDS("Inputs/farm2farm_probs.rds")
+length(adj[adj[]>0])
+adj[adj < 1/10000]<-0
+net<-graph_from_adjacency_matrix(adj, mode="directed", weighted = TRUE, diag = F)
+E(net)$weight
+layout<-create_layout(net, layout = "kk")
+
+blah<-colMeans(surv_out$meanarr)
+layout$x<-data$X
+layout$y<-data$Y
+layout$smart<-blah
+
+
+
+check1<-surv_out_stoch$meanarr
+ggraph(layout) + 
+    geom_edge_link(aes(color=weight, width=weight), alpha=0.25, show.legend = F) + 
+    geom_node_point(aes(color=smart, size=smart)  )+
+    scale_color_viridis_c(breaks=c(300, 600, 900, 1200))+
+  scale_edge_width(range = c(0, 0.3), guide="none")+
+  scale_size_continuous(range = c(0, 3), breaks=c(300, 600, 900, 1200))+guides(size=guide_legend("Uninfested nodes \nat detection"), 
+                                                color=guide_legend("Uninfested nodes \nat detection"))
+
+ggsave("uninfested nodes at detection.jpg", width=11, height=11)
+
+
+
+
+
+``` 

@@ -191,6 +191,7 @@ saveRDS(dist_mat_farm, "Inputs/dist_mat_farm.rds")
 
 This graphs a negative exponential dispersal kernel but such that dispersal near 0 is not 100%. Instead we set it at 1/20 based on the idea that seed dispersal between adjacent farms is not zero (but once every 20 years). The plant produces seed once per year and is mainly dispersed within farm by farmer equipment, grazing animals moving on wool or hooves (gut passage is not proven). Between farms dispersal is mainly from livestock movement, hay or possibly silage and historically from contaminated seed (rare now). Then we set up the adjacency matrix based on the probability of dispersal based on distance between nodes/farms.
 
+
 ```{r dispersal kernal, echo=TRUE, fig.width=10, fig.height=10, fig.cap="Pareto dispersal kernel"}
 #Pareto
 k= 7 #shape parameter
@@ -222,7 +223,10 @@ length(dist_mat_farm[dist_mat_farm[ ] ==0 ])
 length(dist_mat_farm[dist_mat_farm[ ]>=50000 ])
 
 
- 
+
+#READ DISTANCE MATRIX
+dist_mat_farm<-readRDS("Inputs/dist_mat_farm.rds")
+dist_mat_farm[dist_mat_farm==0]<-0.01
 farm2farm_probs <- thresh*actuar::ppareto(dist_mat_farm, shape=k,  scale=b, lower.tail=F,log.p = F)
 
 #determine probability for 50 km and remove all probabilities lower
