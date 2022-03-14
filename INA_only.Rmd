@@ -81,42 +81,6 @@ initbio2[2]<-1 #infested farm in Waipawa
 class(initbio2)
 ```
 
-This shows the outputs for the different things I entered. The minimum number of variables is longer than you'd expect.
-
-> INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1, readbpam = T, bpam= smadj)
-Error in if (maneffdir != "decrease_estab" & maneffdir != "increase_estab") { : missing value where TRUE/FALSE needed
-
-
-> INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1, readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2)
-Error in INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1,  :   argument "readgeocoords" is missing, with no default
-
-> INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1, readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = T, geocoords = geocoords)
-Error in INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1,  : 
-  argument "readinitinfo" is missing, with no default
-  
-  > INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1, readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = T, geocoords = geocoords, readinitinfo = F, initinfo.norp = 'prop', initinfo.p = c(0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8) )
-Error in INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1,  : 
-  argument "readinitbio" is missing, with no default
-  
-  > INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T,  readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = F, geocoords = geocoords, readinitinfo = F, initinfo.norp = 'prop', initinfo.p = c(0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8), readinitbio = TRUE,initbio=initbio, readseam = FALSE, seamdist = "random", seamrandp = c(0, 0.01, 0.05, 0.1, 0.2), readprobadoptvec=F, readprobestabvec = T, probestabvec = prob_est, usethreshman = F , randgeo = F)
-Error in cbind(xvec, yvec) : object 'xvec' not found
-
-> INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T,  readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = T, geocoords = geocoords, readinitinfo = F, initinfo.norp = 'prop', initinfo.p = c(0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8), readinitbio = TRUE,initbio=initbio, readseam = FALSE, seamdist = "random", seamrandp = c(0, 0.01, 0.05, 0.1, 0.2), readprobadoptvec=F, readprobestabvec = T, probestabvec = prob_est, usethreshman = F )
-Quitting from lines 66-69 (INA_only.Rmd) 
-Error in if (dist4 == "random") { : missing value where TRUE/FALSE needed
-Calls: <Anonymous> ... eval -> <Anonymous> -> multsame2 -> setup2 -> initvals
-
-
-> INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T,  readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = T, geocoords = geocoords, readinitinfo = T, initinfo.norp = 'prop', initinfo.p = c(0.01,0.05,0.1,0.2,0.4, 0.6, 0.8), readinitbio = TRUE,initbio=initbio, readseam = FALSE, seamdist = "random", seamrandp = c(0, 0.01, 0.05, 0.1, 0.2), readprobadoptvec=F, readprobestabvec = T, probestabvec = prob_est, usethreshman = F )
-Error in vect1 %*% amat : non-conformable arguments
-Calls: <Anonymous> ... eval -> <Anonymous> -> multsame2 -> ntsteps2 -> spreadstep
-
-With 5 iterations and 5 timesteps and 1800 nodes
-
-[1] "ending parameter combination 37"
-Error: cannot allocate vector of size 25.6 Mb
-
-A possible issue is that I haven't set up a social network except "random". I think I would be happy to run a model without a social network. Is that possible?
 
 ```{r example}
 
