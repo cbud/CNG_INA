@@ -194,14 +194,15 @@ This graphs a negative exponential dispersal kernel but such that dispersal near
 ```{r dispersal kernal, echo=TRUE, fig.width=10, fig.height=10, fig.cap="Dispersal kernel negative exponential"}
 
 d<-seq(from=0.5, to=2000, by=0.5)
-lmda=0.01
+lmda=0.008
 thresh=1/10
 NegExp <- thresh*exp(-lmda * d)
 dispersal<-tibble(distance=d, Probability=NegExp)
 #probability of dispersal at 1500m
 dispersal[3000,]
 #probability of dispersal at 159m
-dispersal[300,]
+head(dispersal)
+dispersal %>% filter(distance==300)
 ggplot(data=dispersal, aes(x=d, y=NegExp))+
   geom_line()+
   scale_y_continuous(trans = "sqrt", 
@@ -221,6 +222,8 @@ Then we set up the adjacency matrix based on the probability of dispersal based 
 
 #set all zero distances to a small distance because zeros are a problem for negative exponential formula
 
+#READ DISTANCE MATRIX
+dist_mat_farm<-readRDS("Inputs/dist_mat_farm.rds")
 dist_mat_farm[dist_mat_farm==0]<-0.01
  
     farm2farm_probs <- thresh * exp(-lmda * dist_mat_farm)
