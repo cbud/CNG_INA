@@ -7,6 +7,9 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+#library(devtools)
+
+#devtools::install_github("GarrettLab/INA")
 
 library(INA)
 library(tidyverse)
@@ -18,6 +21,7 @@ library(dplyr)
 I set up a small adjacency matrix for the quick running of INAscene.
 
 ```{r load data, echo=TRUE}
+#knitr::purl("INA_only.Rmd")
 data<-read_csv("Inputs/Simple_points_for_INA.csv")
 adj<-readRDS("Inputs/farm2farm_probs.rds")
 #dimnames(adj)<-NULL
@@ -58,14 +62,14 @@ class(initbio)
 
 
 #big matrix version
-
-# geocoords2<-matrix(c(data$X, data$Y), byrow=F, ncol=2)
-# prob_est2<-as.vector(data$Probability_Estab)
-# prob_est2<-1-(1-prob_est2)*20/100
-# class(prob_est2)
-# initbio2<- rep(0, length(data$farm_id))
-# initbio2[2]<-1 #infested farm in Waipawa
-# class(initbio2)
+dimnames(adj)<-NULL
+geocoords2<-matrix(c(data$X, data$Y), byrow=F, ncol=2)
+prob_est2<-as.vector(data$Probability_Estab)
+prob_est2<-1-(1-prob_est2)*20/100
+class(prob_est2)
+initbio2<- rep(0, length(data$farm_id))
+initbio2[2]<-1 #infested farm in Waipawa
+class(initbio2)
 ```
 
 This shows the outputs for the different things I entered. The minimum number of variables is longer than you'd expect.
@@ -106,11 +110,14 @@ Error: cannot allocate vector of size 25.6 Mb
 A possible issue is that I haven't set up a social network except "random". I think I would be happy to run a model without a social network. Is that possible?
 
 ```{r example}
+
+
 CNGv1 <-
   INAscene(
     nreals = 15,
-    ntimesteps = 65,
+    ntimesteps = 2022-1962,
     doplot = F,
+    outputvol = 'less',
     readgeocoords = T,
     geocoords = geocoords,
     numnodes = NA,
@@ -119,20 +126,20 @@ CNGv1 <-
     randgeo = F,
     readinitinfo = T,
     initinfo = initbio,
-    initinfo.norp = NA,
+    initinfo.norp = 'num',
     initinfo.n = NA,
     initinfo.p = NA,
-    initinfo.dist = NA,
+    initinfo.dist = 'random',
     readinitbio = T,
     initbio = initbio,
     initbio.norp = NA,
     initbio.n = NA,
     initbio.p = NA,
-    initbio.dist = NA,
+    initbio.dist = 'random',
     readseam = F,
     seam = NA,
     seamdist = 'random',
-    seamrandp = c(0.001,0.01, 0.05, 0.1),
+    seamrandp = c(0.01, 0.05, 0.5, 1),
     seampla = NA,
     seamplb = NA,
     readbpam = T,
@@ -144,7 +151,7 @@ CNGv1 <-
     readprobadoptvec = F,
     probadoptvec = NA,
     probadoptmean = seq(from = 0, to = 1, by = 0.1),
-    probadoptsd = 0.3,
+    probadoptsd = 0.2,
     readprobestabvec = T,
     probestabvec = prob_est,
     probestabmean = NA,
@@ -154,16 +161,78 @@ CNGv1 <-
     maneffsd = 0.2,
     usethreshman = F,
     maneffthresh = NA,
-    sampeffort = 2
+    sampeffort = NA
   ) 
 
 saveRDS(CNGv1, "~/Sleeper Weeds/Waipawa_model.rds")
  
 ```
 
+
+Large matrix
+
+```{r example Large Matrix, error=TRUE, echo=TRUE}
+CNGvLarge <-
+  INAscene(
+    nreals = 50,
+    ntimesteps = 2022-1962,
+    doplot = F,
+    outputvol = "less",
+    readgeocoords = T,
+    geocoords = geocoords2,
+    numnodes = NA,
+    xrange = NA,
+    yrange = NA,
+    randgeo = F,
+    readinitinfo = F,
+    initinfo = NA, #initbio2,#
+    initinfo.norp = 'prop',
+    initinfo.n = NA,
+    initinfo.p = 0.5,
+    initinfo.dist = 'random',
+    readinitbio = F,
+    initbio = NA, #initbio2,
+    initbio.norp = "num",
+    initbio.n = 2, #starts in 1 or 2 nodes
+    initbio.p = NA,
+    initbio.dist = "random",
+    readseam = F,
+    seam = NA,
+    seamdist = 'random',
+    seamrandp = 1,
+    seampla = NA,
+    seamplb = NA,
+    readbpam = T,
+    bpam = adj,
+    bpamdist = F,
+    bpamrandp = NA,
+    bpampla = NA,
+    bpamplb = NA,
+    readprobadoptvec = F,
+    probadoptvec = NA,
+    probadoptmean = seq(from = 0, to = 1, by = 0.2),
+    probadoptsd = 0.2,
+    readprobestabvec = F,
+    probestabvec = prob_est2,
+    probestabmean = 1,
+    probestabsd = 0.05,
+    maneffdir = 'decrease_estab',
+    maneffmean = seq(from = 0, to = 1, by = 0.1),
+    maneffsd = 0.2,
+    usethreshman = F,
+    maneffthresh = NA,
+    sampeffort = NA
+  )
+
+
+saveRDS(CNGvLarge, "~/Sleeper Weeds/LargeRunCNG.rds")
+ 
+```
 Plots
 
-```{r plots}
+```{r plots1}
+
+CNGv1<-readRDS("~/Sleeper Weeds/Waipawa_model.rds")
 jt <- CNGv1$multout
 
 plot(jt$probadoptmean, jt$mestab, xlab='Mean probability of adopting technology if informed', ylab='Proportion nodes with bioentity', xlim=c(0,1), ylim=c(0,1))
@@ -226,4 +295,70 @@ type = 'h'
 )
 ```
 
+Large matrix plots
 
+
+```{r plots2}
+CNGvLarge<-readRDS("~/Sleeper Weeds/LargeRunCNG.rds")
+
+jt <- CNGvLarge$multout
+
+plot(jt$probadoptmean, jt$mestab, xlab='Mean probability of adopting technology if informed', ylab='Proportion nodes with bioentity', xlim=c(0,1), ylim=c(0,1))
+plot(jt$probadoptmean, jt$mdec, xlab='Mean probability of adopting technology if informed', ylab='Proportion nodes with technology adoption', xlim=c(0,1), ylim=c(0,1))
+jt2 <- CNGvLarge$multdetails
+hist(
+jt2[[1]]$setodec,
+main = 'Proportion nodes with decision to adopt technology',
+xlim = c(0, 1),
+xlab = '',
+col = 'darkblue',
+freq = F
+)
+
+jt2 <- CNGvLarge$multout
+# Plot how the mean establishment proportion is a function of the mean
+# management effect
+
+plot(
+jt2$maneffmean,
+jt2$mestab,
+xlab = 'Mean management effect size',
+ylab = 'Proportion nodes with invasive established',
+ylim = c(0, 1),
+col = 'red',
+pch = 16
+)
+lines(jt2$maneffmean, jt2$mestab, col = 'red')
+# also indicate the 95th percentile
+lines(jt2$maneffmean, jt2$estab95, col='red', lty=2)
+# also indicate the 5th percentile
+lines(jt2$maneffmean, jt2$estab5, col='red', lty=2)
+
+plot(
+jt2$probadoptmean,
+jt2$mestab,
+xlab = 'Mean probability of adoption',
+ylab = 'Proportion nodes with invasive established',
+ylim = c(0, 1),
+col = 'red',
+pch = 16
+)
+lines(jt2$probadoptmean, jt2$mestab, col='red')
+# also indicate the 95th and 5th percentile
+lines(jt2$probadoptmean, jt2$estab95, col='red', lty=2)
+lines(jt2$probadoptmean, jt2$estab5, col='red', lty=2)
+
+
+library(plot3D)
+plot3D::scatter3D(
+x = jt2$probadoptmean,
+y = jt2$maneffmean,
+z = jt2$mestab,
+pch = 16,
+xlab = 'Mean prob adoption',
+ylab = 'Mean man effect',
+zlab = 'Prop bio estab',
+bty = 'b2',
+type = 'h'
+)
+```

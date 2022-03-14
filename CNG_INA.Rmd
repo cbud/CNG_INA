@@ -191,25 +191,24 @@ saveRDS(dist_mat_farm, "Inputs/dist_mat_farm.rds")
 
 This graphs a negative exponential dispersal kernel but such that dispersal near 0 is not 100%. Instead we set it at 1/20 based on the idea that seed dispersal between adjacent farms is not zero (but once every 20 years). The plant produces seed once per year and is mainly dispersed within farm by farmer equipment, grazing animals moving on wool or hooves (gut passage is not proven). Between farms dispersal is mainly from livestock movement, hay or possibly silage and historically from contaminated seed (rare now). Then we set up the adjacency matrix based on the probability of dispersal based on distance between nodes/farms.
 
-```{r dispersal kernal, echo=TRUE, fig.width=10, fig.height=10, fig.cap="Dispersal kernel negative exponential"}
+```{r dispersal kernal, echo=TRUE, fig.width=10, fig.height=10, fig.cap="Pareto dispersal kernel"}
+#Pareto
+k= 7 #shape parameter
+b= 500 #scale parameter
+thresh= 1/20 #location parameter
+d=seq(from=0, to=50000, by=1 )
 
-d<-seq(from=0.5, to=2000, by=0.5)
-lmda=0.01
-thresh=1/10
-NegExp <- thresh*exp(-lmda * d)
-dispersal<-tibble(distance=d, Probability=NegExp)
-#probability of dispersal at 1500m
-dispersal[3000,]
-#probability of dispersal at 159m
-dispersal[300,]
-ggplot(data=dispersal, aes(x=d, y=NegExp))+
-  geom_line()+
-  scale_y_continuous(trans = "sqrt", 
-                    # breaks=c(0.000000001,0.00001, 0.001, 0.01, 0.05)
-                     )+
-  xlab("distance in meters")+
-  ylab("Probability of dispersal")
+#library(actuar)
 
+prob2<- thresh*actuar::ppareto(d, shape=k,  scale=b, lower.tail=F,log.p = F)
+
+for_plot<-tibble(distance=d, probability=prob2, shape_par=k, scale_par=b, loc_par=c)
+
+for_plot %>% 
+  filter(distance==0|distance==1|distance==150|distance==500|distance==50000)
+
+for_plot %>% 
+ggplot(aes(x=distance, y=probability))+ geom_line()
 
 
 ```
@@ -218,18 +217,54 @@ Then we set up the adjacency matrix based on the probability of dispersal based 
 
 ```{r create an adjacency matrix, echo=TRUE}
 
+dist_mat_farm<-readRDS("Inputs/dist_mat_farm.rds")
+length(dist_mat_farm[dist_mat_farm[ ] ==0 ])
+length(dist_mat_farm[dist_mat_farm[ ]>=50000 ])
 
-#set all zero distances to a small distance because zeros are a problem for negative exponential formula
 
-dist_mat_farm[dist_mat_farm==0]<-0.01
  
-    farm2farm_probs <- thresh * exp(-lmda * dist_mat_farm)
+farm2farm_probs <- thresh*actuar::ppareto(dist_mat_farm, shape=k,  scale=b, lower.tail=F,log.p = F)
+
+#determine probability for 50 km and remove all probabilities lower
+
+p50<-thresh*actuar::ppareto(50000, shape=k,  scale=b, lower.tail=F,log.p = F)
+
+#how many farm links are removed
+
+length(farm2farm_probs[farm2farm_probs[ ]<=p50 ])
+length(farm2farm_probs[farm2farm_probs[ ]==0 ])
+#replace low probs with zero
+farm2farm_probs[farm2farm_probs < p50] <- 0
+
+length(farm2farm_probs[farm2farm_probs[ ]==0 ])
+length(farm2farm_probs[farm2farm_probs[ ]>0 ])
 #set diagonal to 1   
 diag(farm2farm_probs)<-1
 
 saveRDS(farm2farm_probs, "Inputs/farm2farm_probs.rds")
 ```
 
+
+Get a network graph
+
+```{r ggraph of the matrix}
+
+library(igraph)
+library(ggraph)
+farm2farm_probs<-readRDS("Inputs/farm2farm_probs.rds")
+#Look at parts with greater than 1% probability of a link
+farm2farm_probs[farm2farm_probs < 0.001] <- 0
+length(farm2farm_probs[farm2farm_probs[ ]>0 ])
+
+Net<-graph_from_adjacency_matrix(farm2farm_probs, mode="directed", diag=F, weighted=TRUE)
+layout <- create_layout(Net, layout = 'drl')
+ggraph(layout) + 
+    geom_edge_link(color="black") + 
+    geom_node_point()
+```
+
 The next step is to set up a INA scenario analysis. With the probability of establishment being penalized by 20% at an Avg_EI of 6 and not at all for an average EI of 40. The management adoption rate could vary between 20 and 80% in increments of 10. Management effectiveness could have a mean of 1/14 and sd of 0.1 - since the seed bank lasts 7 years, and getting rid of it is difficult.
+
+
 
 ## References
