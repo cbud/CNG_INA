@@ -9,8 +9,10 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 # library(devtools)
 #devtools::install_github("GarrettLab/INA")
+
 library(INA)
 library(tidyverse)
 library(dplyr)
@@ -23,6 +25,7 @@ library(ggraph)
 I set up a small adjacency matrix for the quick running of INAscene.
 
 ```{r load data, echo=TRUE}
+#knitr::purl("INA_only.Rmd")
 data<-read_csv("Inputs/Simple_points_for_INA.csv")
 adj<-readRDS("Inputs/farm2farm_probs.rds")
 
@@ -79,44 +82,9 @@ initinfo2<-rep(1, length(data$farm_id))
 class(initbio2)
 ```
 
-This shows the outputs for the different things I entered. The minimum number of variables is longer than you'd expect.
 
-> INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1, readbpam = T, bpam= smadj)
-Error in if (maneffdir != "decrease_estab" & maneffdir != "increase_estab") { : missing value where TRUE/FALSE needed
+```{r example}
 
-
-> INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1, readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2)
-Error in INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1,  :   argument "readgeocoords" is missing, with no default
-
-> INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1, readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = T, geocoords = geocoords)
-Error in INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1,  : 
-  argument "readinitinfo" is missing, with no default
-  
-  > INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1, readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = T, geocoords = geocoords, readinitinfo = F, initinfo.norp = 'prop', initinfo.p = c(0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8) )
-Error in INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T, initbio.n = 1,  : 
-  argument "readinitbio" is missing, with no default
-  
-  > INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T,  readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = F, geocoords = geocoords, readinitinfo = F, initinfo.norp = 'prop', initinfo.p = c(0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8), readinitbio = TRUE,initbio=initbio, readseam = FALSE, seamdist = "random", seamrandp = c(0, 0.01, 0.05, 0.1, 0.2), readprobadoptvec=F, readprobestabvec = T, probestabvec = prob_est, usethreshman = F , randgeo = F)
-Error in cbind(xvec, yvec) : object 'xvec' not found
-
-> INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T,  readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = T, geocoords = geocoords, readinitinfo = F, initinfo.norp = 'prop', initinfo.p = c(0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8), readinitbio = TRUE,initbio=initbio, readseam = FALSE, seamdist = "random", seamrandp = c(0, 0.01, 0.05, 0.1, 0.2), readprobadoptvec=F, readprobestabvec = T, probestabvec = prob_est, usethreshman = F )
-Quitting from lines 66-69 (INA_only.Rmd) 
-Error in if (dist4 == "random") { : missing value where TRUE/FALSE needed
-Calls: <Anonymous> ... eval -> <Anonymous> -> multsame2 -> setup2 -> initvals
-
-
-> INA::INAscene(nreals = 10, ntimesteps = 10, doplot = T,  readbpam = T, bpam= smadj, maneffdir = "decrease_estab", maneffmean = 1/14, maneffsd = 0.2, readgeocoords = T, geocoords = geocoords, readinitinfo = T, initinfo.norp = 'prop', initinfo.p = c(0.01,0.05,0.1,0.2,0.4, 0.6, 0.8), readinitbio = TRUE,initbio=initbio, readseam = FALSE, seamdist = "random", seamrandp = c(0, 0.01, 0.05, 0.1, 0.2), readprobadoptvec=F, readprobestabvec = T, probestabvec = prob_est, usethreshman = F )
-Error in vect1 %*% amat : non-conformable arguments
-Calls: <Anonymous> ... eval -> <Anonymous> -> multsame2 -> ntsteps2 -> spreadstep
-
-With 5 iterations and 5 timesteps and 1800 nodes
-
-[1] "ending parameter combination 37"
-Error: cannot allocate vector of size 25.6 Mb
-
-A possible issue is that I haven't set up a social network except "random". I think I would be happy to run a model without a social network. Is that possible?
-
-```{r INA scene small matrix, error=TRUE}
 # CNGv1 <-
 #   INAscene(
 #     nreals = 50,
@@ -273,7 +241,7 @@ CNGvLarge_pareto <-
     bpamplb = NA,
     readprobadoptvec = F,
     probadoptvec = NA,
-    probadoptmean = seq(from = 0, to = 1, by = 0.2),
+   probadoptmean = seq(from = 0, to = 1, by = 0.1),
     probadoptsd = 0.2,
     readprobestabvec = F,
     probestabvec = NA,
@@ -290,7 +258,69 @@ saveRDS(CNGvLarge_pareto, "~/Downloads/CNGvLarge_pareto.rds") #1/10 and 0.08 pro
 
 ```
 
+
+Large matrix
+
+```{r example Large Matrix, error=TRUE, echo=TRUE}
+CNGvLarge <-
+  INAscene(
+    nreals = 50,
+    ntimesteps = 2022-1962,
+    doplot = F,
+    outputvol = "less",
+    readgeocoords = T,
+    geocoords = geocoords2,
+    numnodes = NA,
+    xrange = NA,
+    yrange = NA,
+    randgeo = F,
+    readinitinfo = F,
+    initinfo = NA, #initbio2,#
+    initinfo.norp = 'prop',
+    initinfo.n = NA,
+    initinfo.p = 0.5,
+    initinfo.dist = 'random',
+    readinitbio = F,
+    initbio = NA, #initbio2,
+    initbio.norp = "num",
+    initbio.n = 2, #starts in 1 or 2 nodes
+    initbio.p = NA,
+    initbio.dist = "random",
+    readseam = F,
+    seam = NA,
+    seamdist = 'random',
+    seamrandp = 1,
+    seampla = NA,
+    seamplb = NA,
+    readbpam = T,
+    bpam = adj,
+    bpamdist = F,
+    bpamrandp = NA,
+    bpampla = NA,
+    bpamplb = NA,
+    readprobadoptvec = F,
+    probadoptvec = NA,
+    probadoptmean = seq(from = 0, to = 1, by = 0.2),
+    probadoptsd = 0.2,
+    readprobestabvec = F,
+    probestabvec = prob_est2,
+    probestabmean = 1,
+    probestabsd = 0.05,
+    maneffdir = 'decrease_estab',
+    maneffmean = seq(from = 0, to = 1, by = 0.1),
+    maneffsd = 0.2,
+    usethreshman = F,
+    maneffthresh = NA,
+    sampeffort = NA
+  )
+
+
+saveRDS(CNGvLarge, "~/Sleeper Weeds/LargeRunCNG.rds")
+ 
+```
 Plots
+
+
 
 ```{r plots, error=TRUE}
 CNGvlarge<-readRDS("~/Downloads/Large_model1in20pareto.rds")
@@ -321,7 +351,6 @@ jt2 <- CNGvLarge$multout
 # col = 'darkblue',
 # freq = F
 # )
-
 
 # Plot how the mean establishment proportion is a function of the mean
 # management effect
@@ -360,11 +389,78 @@ type = 'h'
 
 ```
 
+Large matrix plots
+
+
+```{r plots2}
+CNGvLarge<-readRDS("~/Sleeper Weeds/LargeRunCNG.rds")
+
+jt <- CNGvLarge$multout
+
+plot(jt$probadoptmean, jt$mestab, xlab='Mean probability of adopting technology if informed', ylab='Proportion nodes with bioentity', xlim=c(0,1), ylim=c(0,1))
+plot(jt$probadoptmean, jt$mdec, xlab='Mean probability of adopting technology if informed', ylab='Proportion nodes with technology adoption', xlim=c(0,1), ylim=c(0,1))
+jt2 <- CNGvLarge$multdetails
+hist(
+jt2[[1]]$setodec,
+main = 'Proportion nodes with decision to adopt technology',
+xlim = c(0, 1),
+xlab = '',
+col = 'darkblue',
+freq = F
+)
+
+jt2 <- CNGvLarge$multout
+# Plot how the mean establishment proportion is a function of the mean
+# management effect
+
+plot(
+jt2$maneffmean,
+jt2$mestab,
+xlab = 'Mean management effect size',
+ylab = 'Proportion nodes with invasive established',
+ylim = c(0, 1),
+col = 'red',
+pch = 16
+)
+lines(jt2$maneffmean, jt2$mestab, col = 'red')
+# also indicate the 95th percentile
+lines(jt2$maneffmean, jt2$estab95, col='red', lty=2)
+# also indicate the 5th percentile
+lines(jt2$maneffmean, jt2$estab5, col='red', lty=2)
+
+plot(
+jt2$probadoptmean,
+jt2$mestab,
+xlab = 'Mean probability of adoption',
+ylab = 'Proportion nodes with invasive established',
+ylim = c(0, 1),
+col = 'red',
+pch = 16
+)
+lines(jt2$probadoptmean, jt2$mestab, col='red')
+# also indicate the 95th and 5th percentile
+lines(jt2$probadoptmean, jt2$estab95, col='red', lty=2)
+lines(jt2$probadoptmean, jt2$estab5, col='red', lty=2)
+
+
+library(plot3D)
+plot3D::scatter3D(
+x = jt2$probadoptmean,
+y = jt2$maneffmean,
+z = jt2$mestab,
+pch = 16,
+xlab = 'Mean prob adoption',
+ylab = 'Mean man effect',
+zlab = 'Prop bio estab',
+bty = 'b2',
+type = 'h'
+)
+```
 
 ```{r surveillance analysis}
 
 surv_out<-smartsurv(adjmat = adj, stoch = F, nrealz=1)
-surv_out_stoch<-smartsurv(adjmat = adj, stoch = T, nrealz=10)
+#surv_out_stoch<-smartsurv(adjmat = adj, stoch = T, nrealz=10)
 saveRDS(surv_out, "~/Downloads/surv_out.rds")
 ```
 
@@ -401,4 +497,3 @@ ggsave("uninfested nodes at detection.jpg", width=11, height=11)
 
 
 ``` 
-
