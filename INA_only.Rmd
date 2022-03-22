@@ -78,13 +78,12 @@ prob_est2<-1-(1-prob_est2)*20/100
 class(prob_est2)
 initbio2<- rep(0, length(data$farm_id))
 initbio2[2]<-1 #infested farm in Waipawa
+initinfo2<-rep(1, length(data$farm_id))
 class(initbio2)
-
-memory.limit(size=124000)
 ```
 
 
-```{r example small adjacency matrix, error=TRUE}
+```{r example}
 
 # CNGv1 <-
 #   INAscene(
@@ -151,7 +150,7 @@ Big matrix case
 ```{r big matrix INA scene, error=TRUE}
 
 #options with large matrix
-CNGvLarge <-
+CNGvLfullinfo <-
   INAscene(
     nreals = 30,
     ntimesteps = 2022-1962,
@@ -163,16 +162,69 @@ CNGvLarge <-
     xrange = NA,
     yrange = NA,
     randgeo = F,
-    readinitinfo = F,
-    initinfo = NA, #initbio2,#
+    readinitinfo = T,
+    initinfo = initinfo2, #
     initinfo.norp = 'prop',
     initinfo.n = NA,
-    initinfo.p = 0.5,
+    initinfo.p = 1,
     initinfo.dist = 'random',
+    readinitbio = F,
+    initbio = NA, #initbio2 if we knew exactly where the infestation started
+    initbio.norp = "num",
+    initbio.n = 2, # 2 nodes
+    initbio.p = NA,
+    initbio.dist = "random",
+    readseam = F,
+    seam = NA,
+    seamdist = 'random',
+    seamrandp = 1,
+    seampla = NA,
+    seamplb = NA,
+    readbpam = T,
+    bpam = adj,
+    bpamdist = F,
+    bpamrandp = NA,
+    bpampla = NA,
+    bpamplb = NA,
+    readprobadoptvec = F,
+    probadoptvec = NA,
+    probadoptmean = seq(from = 0, to = 1, by = 0.1),
+    probadoptsd = 0.2,
+    readprobestabvec = F,
+    probestabvec = NA, #prob_est2,
+    probestabmean = 1,
+    probestabsd = 0.05,
+    maneffdir = 'decrease_estab',
+    maneffmean = seq(from = 0, to = 1, by = 0.1),
+    maneffsd = 0.2,
+    usethreshman = F,
+    maneffthresh = NA,
+    sampeffort = NA
+  ) 
+
+
+CNGvLarge_pareto <-
+  INAscene(
+    nreals = 30,
+    ntimesteps = 2022-1962,
+    doplot = F,
+    outputvol = "less",
+    readgeocoords = T,
+    geocoords = geocoords2,
+    numnodes = NA,
+    xrange = NA,
+    yrange = NA,
+    randgeo = F,
+    readinitinfo = T,
+    initinfo = initinfo2, #initbio2,#
+    initinfo.norp = 'prop',
+    initinfo.n = NA,
+    initinfo.p = 1,
+    initinfo.dist = 'rightedge',
     readinitbio = F,
     initbio = NA, #initbio2,
     initbio.norp = "num",
-    initbio.n = 2, #starts in 1 or 2 nodes
+    initbio.n = 2, #starts in 2 nodes
     initbio.p = NA,
     initbio.dist = "random",
     readseam = F,
@@ -192,17 +244,17 @@ CNGvLarge <-
    probadoptmean = seq(from = 0, to = 1, by = 0.1),
     probadoptsd = 0.2,
     readprobestabvec = F,
-    probestabvec = prob_est2,
+    probestabvec = NA,
     probestabmean = 1,
     probestabsd = 0.05,
     maneffdir = 'decrease_estab',
-    maneffmean = seq(from = 0, to = 1, by = 0.1),
+    maneffmean =seq(from = 0, to = 1, by = 0.2),
     maneffsd = 0.2,
     usethreshman = F,
     maneffthresh = NA,
     sampeffort = NA
   ) 
-saveRDS(CNGvLarge, "~/Downloads/Large_model1in20pareto.rds") 
+saveRDS(CNGvLarge_pareto, "~/Downloads/CNGvLarge_pareto.rds") #1/10 and 0.08 produces 0.00907 at 300m
 
 ```
 
@@ -223,7 +275,7 @@ CNGvLarge <-
     yrange = NA,
     randgeo = F,
     readinitinfo = F,
-    initinfo = rep(1, 1830), #initbio2,#
+    initinfo = NA, #initbio2,#
     initinfo.norp = 'prop',
     initinfo.n = NA,
     initinfo.p = 0.5,
@@ -271,11 +323,9 @@ Plots
 
 
 ```{r plots, error=TRUE}
-CNGvLarge_mng<-readRDS("~/GitHub/CNG_INA/CNG_INA/Large_model1in20pareto_small_mng.rds")
-CNGvLarge_adopt<-readRDS("~/GitHub/CNG_INA/CNG_INA/Large_model1in20pareto_small_adopt.rds")
-CNGvLarge<-readRDS("Inputs/Large_model1in20pareto.rds")
-jt2 <- CNGvLarge_mng$multout
-jt3<-CNGvLarge_adopt$multout
+CNGvlarge<-readRDS("~/Downloads/Large_model1in20pareto.rds")
+jt2 <- CNGvLarge$multout
+
 
 #Waipawa example
 # library(plot3D)
@@ -320,13 +370,8 @@ lines(jt2$maneffmean, jt2$estab95, col='red', lty=2)
 # also indicate the 5th percentile
 lines(jt2$maneffmean, jt2$estab5, col='red', lty=2)
 
-plot(jt3$probadoptmean, jt3$mestab, xlab='Mean probability of adopting technology if informed', ylab='Proportion nodes with bioentity', xlim=c(0,1), ylim=c(0,1))
-lines(jt3$probadoptmean, jt3$mestab, col = 'red')
-# also indicate the 95th percentile
-lines(jt3$probadoptmean, jt3$estab95, col='red', lty=2)
-# also indicate the 5th percentile
-lines(jt3$probadoptmean, jt3$estab5, col='red', lty=2)
-jt2<-jt3
+
+
 library(plot3D)
 p2<-plot3D::scatter3D(
 x = jt2$probadoptmean,
@@ -413,12 +458,10 @@ type = 'h'
 ```
 
 ```{r surveillance analysis}
-adj<-readRDS("Inputs/farm2farm_probs.rds")
-length(adj[adj[]>0])
-adj[adj < 1/10000]<-0
-surv_out<-smartsurv(adjmat = adj, stoch = F, nrealz=1)
-saveRDS(surv_out, "~/Downloads/surv_out.rds")
 
+surv_out<-smartsurv(adjmat = adj, stoch = F, nrealz=1)
+#surv_out_stoch<-smartsurv(adjmat = adj, stoch = T, nrealz=10)
+saveRDS(surv_out, "~/Downloads/surv_out.rds")
 ```
 
 Graph a network
@@ -438,13 +481,13 @@ layout$smart<-blah
 
 
 
-check1<-surv_out$meanarr
+check1<-surv_out_stoch$meanarr
 ggraph(layout) + 
     geom_edge_link(aes(color=weight, width=weight), alpha=0.25, show.legend = F) + 
     geom_node_point(aes(color=smart, size=smart)  )+
     scale_color_viridis_c(breaks=c(300, 600, 900, 1200))+
   scale_edge_width(range = c(0, 0.3), guide="none")+
-  scale_size_continuous(range = c(0, 3), breaks=c(300, 600, 900, 1200, 1500))+guides(size=guide_legend("Uninfested nodes \nat detection"), 
+  scale_size_continuous(range = c(0, 3), breaks=c(300, 600, 900, 1200))+guides(size=guide_legend("Uninfested nodes \nat detection"), 
                                                 color=guide_legend("Uninfested nodes \nat detection"))
 
 ggsave("uninfested nodes at detection.jpg", width=11, height=11)
