@@ -119,7 +119,7 @@ crscheck<-sf::st_crs(HB.wgs84v2)
 CNGpoints<-read_xlsx("Inputs/HBRC_CNG_points.xlsx")%>% 
   filter(Longitude>176)
 
-CNGpoints2<-st_as_sf(CNGpoints, coords = c("Longitude", "Latitude"), crs = crscheck)
+CNGpoints2<-sf::st_as_sf(CNGpoints, coords = c("Longitude", "Latitude"), crs = crscheck)
 
 
   
@@ -167,13 +167,13 @@ The next step is to make a distance matrix, using polygons. Centroids would be s
 ```{r get distance matrix, echo=TRUE, cache=TRUE}
 
 #gDistance seems to require this other format
-For_distance <-as_Spatial(HB.wgs84v2)
-For_distance <-spTransform(For_distance, CRS("+proj=utm +zone=60 +south +datum=WGS84 +units=m +no_defs"))
+For_distance <-sf::as_Spatial(HB.wgs84v2)
+For_distance <-rgdal::spTransform(For_distance, CRS("+proj=utm +zone=60 +south +datum=WGS84 +units=m +no_defs"))
 
 #summary(For_distance)
 
 # #distance matrix all farms
-Farm_Dist_Mat_HB<-gDistance(For_distance, byid = TRUE)
+Farm_Dist_Mat_HB<- rgeos::gDistance(For_distance, byid = TRUE)
 #row.names(Farm_Dist_Mat_HB)
 
 farm_ids<-HB.wgs84v2$farm_id
@@ -205,6 +205,7 @@ prob2<- thresh*actuar::ppareto(d, shape=k,  scale=b, lower.tail=F,log.p = F)
 
 for_plot<-tibble(distance=d, probability=prob2, shape_par=k, scale_par=b, loc_par=c)
 
+#check probability at a few distances
 for_plot %>% 
   filter(distance==0|distance==1|distance==150|distance==500|distance==50000)
 
@@ -218,16 +219,21 @@ Then we set up the adjacency matrix based on the probability of dispersal based 
 
 ```{r create an adjacency matrix, echo=TRUE}
 
-dist_mat_farm<-readRDS("Inputs/dist_mat_farm.rds")
-length(dist_mat_farm[dist_mat_farm[ ] ==0 ])
-length(dist_mat_farm[dist_mat_farm[ ]>=50000 ])
-
-
 
 #READ DISTANCE MATRIX
 dist_mat_farm<-readRDS("Inputs/dist_mat_farm.rds")
+
+#check the number of farms to farm distances that are in a certain range
+length(dist_mat_farm[dist_mat_farm[ ] ==0 ])
+length(dist_mat_farm[dist_mat_farm[ ]>=50000 ])
+
+#can make the distances that are shown as a zero a very small number (zeros work with this pareto distribution but not for powerlaw or negative exponential distributions)
+
 dist_mat_farm[dist_mat_farm==0]<-0.01
 farm2farm_probs <- thresh*actuar::ppareto(dist_mat_farm, shape=k,  scale=b, lower.tail=F,log.p = F)
+
+
+# Because of the long fat tail you need to decide if you want to remove some low probability links. One way is to choose a probability associated with a distance, or another is to remove based on a low arbitrary value of 1/10000 or similar. Here is a way to calculate the probability assoicated with a distance and remove values less than that.
 
 #determine probability for 50 km and remove all probabilities lower
 

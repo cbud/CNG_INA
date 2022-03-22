@@ -5,3 +5,5 @@
 *.rds
 .RDataTmp
 *.zip
+Inputs/dist_mat_farm.rds
+.RDataTmp1
