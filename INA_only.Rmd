@@ -75,6 +75,7 @@ prob_est2<-1-(1-prob_est2)*20/100
 class(prob_est2)
 initbio2<- rep(0, length(data$farm_id))
 initbio2[2]<-1 #infested farm in Waipawa
+initinfo2<-rep(1, length(data$farm_id))
 class(initbio2)
 ```
 
@@ -181,28 +182,81 @@ Big matrix case
 ```{r big matrix INA scene, error=TRUE}
 
 #options with large matrix
-CNGvLarge <-
+CNGvLfullinfo <-
   INAscene(
     nreals = 30,
     ntimesteps = 2022-1962,
     doplot = F,
-    outputvol = "more",
+    outputvol = "less",
     readgeocoords = T,
     geocoords = geocoords2,
     numnodes = NA,
     xrange = NA,
     yrange = NA,
     randgeo = F,
-    readinitinfo = F,
-    initinfo = NA, #initbio2,#
+    readinitinfo = T,
+    initinfo = initinfo2, #
     initinfo.norp = 'prop',
     initinfo.n = NA,
-    initinfo.p = 0.5,
+    initinfo.p = 1,
     initinfo.dist = 'random',
+    readinitbio = F,
+    initbio = NA, #initbio2 if we knew exactly where the infestation started
+    initbio.norp = "num",
+    initbio.n = 2, # 2 nodes
+    initbio.p = NA,
+    initbio.dist = "random",
+    readseam = F,
+    seam = NA,
+    seamdist = 'random',
+    seamrandp = 1,
+    seampla = NA,
+    seamplb = NA,
+    readbpam = T,
+    bpam = adj,
+    bpamdist = F,
+    bpamrandp = NA,
+    bpampla = NA,
+    bpamplb = NA,
+    readprobadoptvec = F,
+    probadoptvec = NA,
+    probadoptmean = seq(from = 0, to = 1, by = 0.1),
+    probadoptsd = 0.2,
+    readprobestabvec = F,
+    probestabvec = NA, #prob_est2,
+    probestabmean = 1,
+    probestabsd = 0.05,
+    maneffdir = 'decrease_estab',
+    maneffmean = seq(from = 0, to = 1, by = 0.1),
+    maneffsd = 0.2,
+    usethreshman = F,
+    maneffthresh = NA,
+    sampeffort = NA
+  ) 
+
+
+CNGvLarge_pareto <-
+  INAscene(
+    nreals = 30,
+    ntimesteps = 2022-1962,
+    doplot = F,
+    outputvol = "less",
+    readgeocoords = T,
+    geocoords = geocoords2,
+    numnodes = NA,
+    xrange = NA,
+    yrange = NA,
+    randgeo = F,
+    readinitinfo = T,
+    initinfo = initinfo2, #initbio2,#
+    initinfo.norp = 'prop',
+    initinfo.n = NA,
+    initinfo.p = 1,
+    initinfo.dist = 'rightedge',
     readinitbio = F,
     initbio = NA, #initbio2,
     initbio.norp = "num",
-    initbio.n = 2, #starts in 1 or 2 nodes
+    initbio.n = 2, #starts in 2 nodes
     initbio.p = NA,
     initbio.dist = "random",
     readseam = F,
@@ -222,24 +276,24 @@ CNGvLarge <-
     probadoptmean = seq(from = 0, to = 1, by = 0.2),
     probadoptsd = 0.2,
     readprobestabvec = F,
-    probestabvec = prob_est2,
+    probestabvec = NA,
     probestabmean = 1,
     probestabsd = 0.05,
     maneffdir = 'decrease_estab',
-    maneffmean = seq(from = 0, to = 1, by = 0.1),
+    maneffmean =seq(from = 0, to = 1, by = 0.2),
     maneffsd = 0.2,
     usethreshman = F,
     maneffthresh = NA,
     sampeffort = NA
   ) 
-saveRDS(CNGvLarge, "~/Downloads/Large_model1in20pareto.rds") #1/10 and 0.08 produces 0.00907 at 300m
+saveRDS(CNGvLarge_pareto, "~/Downloads/CNGvLarge_pareto.rds") #1/10 and 0.08 produces 0.00907 at 300m
 
 ```
 
 Plots
 
 ```{r plots, error=TRUE}
-#CNGv1<-readRDS("~/Downloads/Waipawa_model.rds")
+CNGvlarge<-readRDS("~/Downloads/Large_model1in20pareto.rds")
 jt2 <- CNGvLarge$multout
 
 
